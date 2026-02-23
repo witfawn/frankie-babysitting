@@ -1,11 +1,12 @@
 import { NextAuthOptions } from "next-auth";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -25,38 +26,50 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
         
-        // Find or create demo user
-        let user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-        
-        if (!user) {
-          // Auto-create demo user
-          const role = credentials.email === "parent@example.com" ? "PARENT" : "ADMIN";
-          user = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              name: credentials.email.split("@")[0],
-              role: role,
-            },
+        try {
+          // Find or create demo user
+          let user = await prisma.user.findUnique({
+            where: { email: credentials.email },
           });
+          
+          if (!user) {
+            // Auto-create demo user
+            const role = credentials.email === "parent@example.com" ? "PARENT" : "ADMIN";
+            user = await prisma.user.create({
+              data: {
+                email: credentials.email,
+                name: credentials.email.split("@")[0],
+                role: role,
+              },
+            });
+          }
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
         }
-        
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
       },
     }),
   ],
   callbacks: {
-    async session({ session, user }: { session: any; user: any }) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id;
-        session.user.role = user.role;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
