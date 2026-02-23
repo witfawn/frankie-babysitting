@@ -5,9 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, User, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, Clock, User, MapPin, Phone, Copy } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatDate, formatTime } from "@/lib/timezone";
 import { AdminNav } from "@/components/admin-nav";
 import { BookingActions } from "@/components/booking-actions";
 
@@ -68,14 +68,13 @@ export default async function AvailabilityDetailPage({
               <div>
                 <p className="text-sm text-slate-500">Date</p>
                 <p className="font-medium">
-                  {format(new Date(availability.date), "EEEE, MMMM d, yyyy")}
+                  {formatDate(availability.date)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-slate-500">Time</p>
                 <p className="font-medium">
-                  {format(new Date(availability.startTime), "h:mm a")} -{" "}
-                  {format(new Date(availability.endTime), "h:mm a")}
+                  {formatTime(availability.startTime)} - {formatTime(availability.endTime)}
                 </p>
               </div>
               {availability.notes && (
@@ -92,6 +91,17 @@ export default async function AvailabilityDetailPage({
                   {availability.status}
                 </Badge>
               </div>
+              
+              {/* Duplicate Button */}
+              <Link 
+                href={`/admin/availability/new?duplicate=${availability.id}`}
+                className="block"
+              >
+                <Button variant="outline" className="w-full">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Duplicate Availability
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -139,8 +149,7 @@ export default async function AvailabilityDetailPage({
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-slate-400" />
                         <span>
-                          {format(new Date(booking.requestedStart), "h:mm a")} -{" "}
-                          {format(new Date(booking.requestedEnd), "h:mm a")}
+                          {formatTime(booking.requestedStart)} - {formatTime(booking.requestedEnd)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

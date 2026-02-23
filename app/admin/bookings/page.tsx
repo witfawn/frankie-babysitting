@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, User, MapPin } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate, formatTime } from "@/lib/timezone";
 import { AdminNav } from "@/components/admin-nav";
 import { BookingActions } from "@/components/booking-actions";
 
@@ -26,7 +26,11 @@ async function getBookings() {
   });
 }
 
-export default async function AdminBookingsPage() {
+export default async function AdminBookingsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string };
+}) {
   const session = await getServerSession(authOptions);
 
   if (!session || session.user.role !== "ADMIN") {
@@ -38,6 +42,10 @@ export default async function AdminBookingsPage() {
   const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED");
   const otherBookings = bookings.filter((b) => !["PENDING", "CONFIRMED"].includes(b.status));
 
+  // Set default tab based on query param
+  const defaultTab = searchParams?.status === "CONFIRMED" ? "confirmed" : 
+                     searchParams?.status === "PENDING" ? "pending" : "pending";
+
   return (
     <div className="min-h-screen bg-slate-50">
       <AdminNav />
@@ -45,7 +53,7 @@ export default async function AdminBookingsPage() {
       <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-8">All Bookings</h1>
 
-        <Tabs defaultValue="pending" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="pending">
               Pending ({pendingBookings.length})
@@ -135,14 +143,13 @@ function BookingCard({
           <div>
             <p className="text-slate-500">Date</p>
             <p className="font-medium">
-              {format(new Date(booking.availability.date), "EEEE, MMMM d, yyyy")}
+              {formatDate(booking.availability.date)}
             </p>
           </div>
           <div>
             <p className="text-slate-500">Time</p>
             <p className="font-medium">
-              {format(new Date(booking.requestedStart), "h:mm a")} -{" "}
-              {format(new Date(booking.requestedEnd), "h:mm a")}
+              {formatTime(booking.requestedStart)} - {formatTime(booking.requestedEnd)}
             </p>
           </div>
           <div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, MapPin, Phone } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate, formatTime, formatDateTime } from "@/lib/timezone";
 import { ParentNav } from "@/components/parent-nav";
 
 async function getMyBookings(userId: string) {
@@ -92,10 +92,10 @@ function BookingCard({ booking }: { booking: any }) {
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="font-medium text-lg">
-              {format(new Date(booking.availability.date), "EEEE, MMMM d, yyyy")}
+              {formatDate(booking.availability.date)}
             </p>
             <p className="text-sm text-slate-500">
-              Booked on {format(new Date(booking.createdAt), "MMM d, yyyy")}
+              Booked on {formatDateTime(booking.createdAt)}
             </p>
           </div>
           <Badge
@@ -116,8 +116,7 @@ function BookingCard({ booking }: { booking: any }) {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-slate-400" />
             <span>
-              {format(new Date(booking.requestedStart), "h:mm a")} -{" "}
-              {format(new Date(booking.requestedEnd), "h:mm a")}
+              {formatTime(booking.requestedStart)} - {formatTime(booking.requestedEnd)}
             </span>
           </div>
           <div className="flex items-center gap-2">

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, DollarSign, Plus } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatDate, formatTime } from "@/lib/timezone";
 import { AdminNav } from "@/components/admin-nav";
 
 async function getStats() {
@@ -58,44 +58,52 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Clickable Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <Calendar className="w-4 h-4 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalBookings}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              <Clock className="w-4 h-4 text-yellow-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingBookings}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
-              <Users className="w-4 h-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.confirmedBookings}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Availability</CardTitle>
-              <Calendar className="w-4 h-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalAvailability}</div>
-            </CardContent>
-          </Card>
+          <Link href="/admin/bookings">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <Calendar className="w-4 h-4 text-slate-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalBookings}</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/admin/bookings?status=PENDING">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <Clock className="w-4 h-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.pendingBookings}</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/admin/bookings?status=CONFIRMED">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Confirmed</CardTitle>
+                <Users className="w-4 h-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.confirmedBookings}</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/admin/availability">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Availability</CardTitle>
+                <Calendar className="w-4 h-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.totalAvailability}</div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Recent Availability */}
@@ -114,11 +122,10 @@ export default async function AdminDashboardPage() {
                 >
                   <div>
                     <p className="font-medium">
-                      {format(new Date(avail.date), "EEEE, MMMM d, yyyy")}
+                      {formatDate(avail.date)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {format(new Date(avail.startTime), "h:mm a")} -{" "}
-                      {format(new Date(avail.endTime), "h:mm a")}
+                      {formatTime(avail.startTime)} - {formatTime(avail.endTime)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -138,7 +145,7 @@ export default async function AdminDashboardPage() {
               ))}
               {recentAvailability.length === 0 && (
                 <p className="text-center text-slate-500 py-8">
-                  No availability posted yet. Click "Add Availability" to get started!
+                  No availability posted yet. Click &quot;Add Availability&quot; to get started!
                 </p>
               )}
             </div>

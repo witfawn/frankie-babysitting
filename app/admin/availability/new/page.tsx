@@ -1,26 +1,58 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export default function NewAvailabilityPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const duplicateId = searchParams.get("duplicate");
   const [loading, setLoading] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [formData, setFormData] = useState({
     date: "",
     startTime: "",
     endTime: "",
     notes: "",
   });
+
+  // Fetch availability data if duplicating
+  useEffect(() => {
+    if (duplicateId) {
+      setIsDuplicating(true);
+      fetch(`/api/availability/${duplicateId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data) {
+            // Extract time from ISO strings
+            const startDate = new Date(data.startTime);
+            const endDate = new Date(data.endTime);
+            
+            setFormData({
+              date: "", // Leave date empty so they can pick new one
+              startTime: format(startDate, "HH:mm"),
+              endTime: format(endDate, "HH:mm"),
+              notes: data.notes || "",
+            });
+          }
+        })
+        .catch(() => {
+          toast.error("Failed to load availability for duplication");
+        })
+        .finally(() => {
+          setIsDuplicating(false);
+        });
+    }
+  }, [duplicateId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +81,7 @@ export default function NewAvailabilityPage() {
       });
 
       if (response.ok) {
-        toast.success("Availability created successfully!");
+        toast.success(duplicateId ? "Availability duplicated successfully!" : "Availability created successfully!");
         router.push("/admin/dashboard");
       } else {
         throw new Error("Failed to create availability");
@@ -71,80 +103,97 @@ export default function NewAvailabilityPage() {
               Back
             </Button>
           </Link>
-          <h1 className="ml-4 text-xl font-bold">Add Availability</h1>
+          <h1 className="ml-4 text-xl font-bold">
+            {duplicateId ? "Duplicate Availability" : "Add Availability"}
+          </h1>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Availability</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {duplicateId && <Copy className="w-5 h-5" />}
+              {duplicateId ? "Duplicate Availability" : "Create New Availability"}
+            </CardTitle>
             <CardDescription>
-              Set up a new time window when you&apos;re available for babysitting
+              {duplicateId 
+                ? "Review and edit the duplicated availability before saving"
+                : "Set up a new time window when you're available for babysitting"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
-                  }
-                />
+            {isDuplicating ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time</Label>
+                  <Label htmlFor="date">
+                    Date {duplicateId && "(select new date)"}
+                  </Label>
                   <Input
-                    id="startTime"
-                    type="time"
+                    id="date"
+                    type="date"
                     required
-                    value={formData.startTime}
+                    value={formData.date}
                     onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
+                      setFormData({ ...formData, date: e.target.value })
                     }
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      required
+                      value={formData.startTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startTime: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      required
+                      value={formData.endTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endTime: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    required
-                    value={formData.endTime}
+                  <Label htmlFor="notes">Notes (optional)</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Any special notes about this availability..."
+                    value={formData.notes}
                     onChange={(e) =>
-                      setFormData({ ...formData, endTime: e.target.value })
+                      setFormData({ ...formData, notes: e.target.value })
                     }
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any special notes about this availability..."
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-pink-600 hover:bg-pink-700"
-                disabled={loading}
-              >
-                {loading ? "Creating..." : "Create Availability"}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  className="w-full bg-pink-600 hover:bg-pink-700"
+                  disabled={loading}
+                >
+                  {loading 
+                    ? (duplicateId ? "Duplicating..." : "Creating...") 
+                    : (duplicateId ? "Create Duplicate" : "Create Availability")}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </main>
