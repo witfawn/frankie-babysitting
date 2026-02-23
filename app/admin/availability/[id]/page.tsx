@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, User, MapPin, Phone, Copy } from "lucide-react";
+import { ArrowLeft, Clock, User, MapPin, Phone, Copy, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate, formatTime } from "@/lib/timezone";
 import { AdminNav } from "@/components/admin-nav";
@@ -92,16 +92,39 @@ export default async function AvailabilityDetailPage({
                 </Badge>
               </div>
               
-              {/* Duplicate Button */}
-              <Link 
-                href={`/admin/availability/new?duplicate=${availability.id}`}
-                className="block"
-              >
-                <Button variant="outline" className="w-full">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Duplicate Availability
-                </Button>
-              </Link>
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <Link href={`/admin/availability/${availability.id}/edit`}>
+                  <Button variant="outline" className="w-full">
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </Link>
+                
+                <Link 
+                  href={`/admin/availability/new?duplicate=${availability.id}`}
+                  className="block"
+                >
+                  <Button variant="outline" className="w-full">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Duplicate
+                  </Button>
+                </Link>
+                
+                <form action={`/api/availability/${availability.id}`} method="DELETE" 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!confirm("Delete this availability?")) return;
+                    await fetch(`/api/availability/${availability.id}`, { method: "DELETE" });
+                    window.location.href = "/admin/availability";
+                  }}
+                >
+                  <Button type="submit" variant="outline" className="w-full text-red-500 border-red-200 hover:bg-red-50">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </form>
+              </div>
             </CardContent>
           </Card>
 

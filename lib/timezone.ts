@@ -1,49 +1,98 @@
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
-// Central timezone offset in hours (America/Chicago is UTC-6 or UTC-5 depending on DST)
-// For simplicity, directly adjusting by the offset
-function getCentralOffset(): number {
-  const now = new Date();
-  const january = new Date(now.getFullYear(), 0, 1);
-  const july = new Date(now.getFullYear(), 6, 1);
-  const stdOffset = january.getTimezoneOffset();
-  const dstOffset = july.getTimezoneOffset();
-  
-  // Use a fixed approach: Central Time is UTC-6 (standard) or UTC-5 (DST)
-  // For now, use -6 hours (standard) - this will be roughly correct
-  const d = typeof now === 'string' ? new Date(now) : now;
-  if (d.getTimezoneOffset() === stdOffset) {
-    return -6; // CST
-  }
-  return -5; // CDT
-}
+// Central Timezone is UTC-6 (CST) or UTC-5 (CDT)
+// We need to handle this properly for both display and storage
 
 /**
- * Convert UTC time to Central Time
- * The database stores times in UTC, we need to display in Central
+ * Get the current Central Time offset in milliseconds
+ * Central Time is UTC-6 (standard) or UTC-5 (DST)
  */
-function toCentralTime(utcDate: Date): Date {
-  const offset = getCentralOffset();
-  return new Date(utcDate.getTime() + offset * 60 * 60 * 1000);
+function getCentralOffsetMs(): number {
+  // Create a date in Central timezone to get the actual offset
+  const now = new Date();
+  const centralTimeStr = now.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  
+  // Parse the central time string
+  const [datePart, timePart] = centralTimeStr.split(", ");
+  const [month, day, year] = datePart.split("/");
+  const [hour, minute, second] = timePart.split(":");
+  
+  const centralDate = new Date(
+    parseInt(year),
+    parseInt(month) - 1,
+    parseInt(day),
+    parseInt(hour),
+    parseInt(minute),
+    parseInt(second)
+  );
+  
+  // The offset is the difference between local (which is UTC in the DB) and Central
+  return now.getTime() - centralDate.getTime();
 }
 
 /**
- * Format a date to Central timezone string
+ * Format a date to Central timezone string for display
+ * Input is UTC from database, output is Central time string
  */
 export function formatInCentral(date: Date | string, formatStr: string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  // Times from DB are UTC, convert to Central
-  const centralDate = toCentralTime(d);
+  
+  // Get offset between UTC and Central for this specific date
+  const utcDate = new Date(d.getTime());
+  const centralOffsetMs = getOffsetToCentral(utcDate);
+  
+  // Adjust UTC to Central
+  const centralDate = new Date(utcDate.getTime() - centralOffsetMs);
+  
   return format(centralDate, formatStr);
+}
+
+/**
+ * Calculate offset from UTC to Central Time in milliseconds
+ */
+function getOffsetToCentral(utcDate: Date): number {
+  // Create a string representation of the UTC date in Central timezone
+  const centralStr = utcDate.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  
+  const [datePart, timePart] = centralStr.split(", ");
+  const [month, day, year] = datePart.split("/");
+  const [hour, minute, second] = timePart.split(":");
+  
+  const centralDate = Date.UTC(
+    parseInt(year),
+    parseInt(month) - 1,
+    parseInt(day),
+    parseInt(hour),
+    parseInt(minute),
+    parseInt(second)
+  );
+  
+  return utcDate.getTime() - centralDate;
 }
 
 /**
  * Format date for display (e.g., "Monday, January 15, 2024")
  */
 export function formatDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  // Date is stored at midnight UTC, convert to Central for correct date display
-  return formatInCentral(d, "EEEE, MMMM d, yyyy");
+  return formatInCentral(date, "EEEE, MMMM d, yyyy");
 }
 
 /**
@@ -61,9 +110,10 @@ export function formatDateTime(date: Date | string): string {
 }
 
 /**
- * Convert a local time input (from user in Central time) to UTC for database storage
+ * Convert a Central time input to UTC for database storage
+ * User inputs time in Central, we store as UTC
  */
-export function localToUTC(localDate: Date): Date {
-  const offset = getCentralOffset();
-  return new Date(localDate.getTime() - offset * 60 * 60 * 1000);
+export function centralToUTC(centralDate: Date): Date {
+  const offsetMs = getOffsetToCentral(centralDate);
+  return new Date(centralDate.getTime() + offsetMs);
 }
