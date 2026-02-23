@@ -39,7 +39,8 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+// Combined GET: Admin gets all users, regular user gets their own profile
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -47,6 +48,24 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Admin: return all users
+    if (session.user.role === "ADMIN") {
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          phone: true,
+          address: true,
+          createdAt: true,
+        },
+      });
+      return NextResponse.json(users);
+    }
+
+    // Regular user: return own profile
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
     });
@@ -57,7 +76,7 @@ export async function GET() {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.error("Error fetching user(s):", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -90,35 +109,6 @@ export async function PATCH(req: Request) {
     return NextResponse.json(user);
   } catch (error) {
     console.error("Error updating user:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
-}
-
-// Admin: Get all users
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        phone: true,
-        address: true,
-        createdAt: true,
-      },
-    });
-
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
