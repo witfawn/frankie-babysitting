@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, MapPin, Phone } from "lucide-react";
 import { formatDate, formatTime, formatDateTime } from "@/lib/timezone";
 import { ParentNav } from "@/components/parent-nav";
+import { DeleteBookingButton } from "@/components/delete-booking-button";
 
 async function getMyBookings(userId: string) {
   return await prisma.booking.findMany({
@@ -98,18 +99,23 @@ function BookingCard({ booking }: { booking: any }) {
               Booked on {formatDateTime(booking.createdAt)}
             </p>
           </div>
-          <Badge
-            variant={booking.status === "CONFIRMED" ? "default" : "secondary"}
-            className={
-              booking.status === "CONFIRMED"
-                ? "bg-green-100 text-green-800"
-                : booking.status === "PENDING"
-                ? "bg-yellow-100 text-yellow-800"
-                : ""
-            }
-          >
-            {booking.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={booking.status === "CONFIRMED" ? "default" : "secondary"}
+              className={
+                booking.status === "CONFIRMED"
+                  ? "bg-green-100 text-green-800"
+                  : booking.status === "PENDING"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : ""
+              }
+            >
+              {booking.status}
+            </Badge>
+            {booking.status === "PENDING" && (
+              <DeleteBookingButton bookingId={booking.id} />
+            )}
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 text-sm mb-4">

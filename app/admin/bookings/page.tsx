@@ -9,6 +9,7 @@ import { Clock, User, MapPin } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/timezone";
 import { AdminNav } from "@/components/admin-nav";
 import { BookingActions } from "@/components/booking-actions";
+import { DeleteBookingButton } from "@/components/delete-booking-button";
 
 async function getBookings() {
   return await prisma.booking.findMany({
@@ -119,24 +120,27 @@ function BookingCard({
             </p>
             <p className="text-sm text-slate-500">{booking.parent.email}</p>
           </div>
-          <Badge
-            variant={
-              booking.status === "CONFIRMED"
-                ? "default"
-                : booking.status === "PENDING"
-                ? "secondary"
-                : "destructive"
-            }
-            className={
-              booking.status === "CONFIRMED"
-                ? "bg-green-100 text-green-800"
-                : booking.status === "PENDING"
-                ? "bg-yellow-100 text-yellow-800"
-                : ""
-            }
-          >
-            {booking.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={
+                booking.status === "CONFIRMED"
+                  ? "default"
+                  : booking.status === "PENDING"
+                  ? "secondary"
+                  : "destructive"
+              }
+              className={
+                booking.status === "CONFIRMED"
+                  ? "bg-green-100 text-green-800"
+                  : booking.status === "PENDING"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : ""
+              }
+            >
+              {booking.status}
+            </Badge>
+            <DeleteBookingButton bookingId={booking.id} />
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 text-sm mb-4">
