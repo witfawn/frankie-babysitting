@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-export default function NewAvailabilityPage() {
+function NewAvailabilityForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const duplicateId = searchParams.get("duplicate");
@@ -94,6 +94,97 @@ export default function NewAvailabilityPage() {
   };
 
   return (
+    <>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {duplicateId && <Copy className="w-5 h-5" />}
+          {duplicateId ? "Duplicate Availability" : "Create New Availability"}
+        </CardTitle>
+        <CardDescription>
+          {duplicateId 
+            ? "Review and edit the duplicated availability before saving"
+            : "Set up a new time window when you're available for babysitting"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isDuplicating ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="date">
+                Date {duplicateId && "(select new date)"}
+              </Label>
+              <Input
+                id="date"
+                type="date"
+                required
+                value={formData.date}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  required
+                  value={formData.startTime}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startTime: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  required
+                  value={formData.endTime}
+                  onChange={(e) =>
+                    setFormData({ ...formData, endTime: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Any special notes about this availability..."
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-pink-600 hover:bg-pink-700"
+              disabled={loading}
+            >
+              {loading 
+                ? (duplicateId ? "Duplicating..." : "Creating...") 
+                : (duplicateId ? "Create Duplicate" : "Create Availability")}
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </>
+  );
+}
+
+export default function NewAvailabilityPage() {
+  return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex h-16 items-center px-4">
@@ -103,98 +194,19 @@ export default function NewAvailabilityPage() {
               Back
             </Button>
           </Link>
-          <h1 className="ml-4 text-xl font-bold">
-            {duplicateId ? "Duplicate Availability" : "Add Availability"}
-          </h1>
+          <h1 className="ml-4 text-xl font-bold">Add Availability</h1>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {duplicateId && <Copy className="w-5 h-5" />}
-              {duplicateId ? "Duplicate Availability" : "Create New Availability"}
-            </CardTitle>
-            <CardDescription>
-              {duplicateId 
-                ? "Review and edit the duplicated availability before saving"
-                : "Set up a new time window when you're available for babysitting"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isDuplicating ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="date">
-                    Date {duplicateId && "(select new date)"}
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      required
-                      value={formData.startTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startTime: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      required
-                      value={formData.endTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endTime: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes (optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any special notes about this availability..."
-                    value={formData.notes}
-                    onChange={(e) =>
-                      setFormData({ ...formData, notes: e.target.value })
-                    }
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-pink-600 hover:bg-pink-700"
-                  disabled={loading}
-                >
-                  {loading 
-                    ? (duplicateId ? "Duplicating..." : "Creating...") 
-                    : (duplicateId ? "Create Duplicate" : "Create Availability")}
-                </Button>
-              </form>
-            )}
-          </CardContent>
+          <Suspense fallback={
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
+            </CardContent>
+          }>
+            <NewAvailabilityForm />
+          </Suspense>
         </Card>
       </main>
     </div>
