@@ -93,3 +93,32 @@ export async function PATCH(req: Request) {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
+
+// Admin: Get all users
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "ADMIN") {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        address: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}

@@ -11,8 +11,9 @@ import { Baby, Menu, Home, Calendar, Users, UserCircle, Gift, LogOut } from "luc
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: Home },
   { href: "/admin/bookings", label: "Bookings", icon: Calendar },
+  { href: "/admin/availability", label: "Availability", icon: Calendar },
+  { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/referrals", label: "Referrals", icon: Gift },
-  { href: "/admin/users/new", label: "Add User", icon: Users },
   { href: "/admin/profile", label: "Profile", icon: UserCircle },
 ];
 
