@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,12 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-function NewAvailabilityForm() {
+interface NewAvailabilityFormProps {
+  duplicateId?: string;
+}
+
+function NewAvailabilityForm({ duplicateId }: NewAvailabilityFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const duplicateId = searchParams.get("duplicate");
   const [loading, setLoading] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,12 +35,11 @@ function NewAvailabilityForm() {
         .then((res) => res.json())
         .then((data) => {
           if (data) {
-            // Extract time from ISO strings
             const startDate = new Date(data.startTime);
             const endDate = new Date(data.endTime);
             
             setFormData({
-              date: "", // Leave date empty so they can pick new one
+              date: "",
               startTime: format(startDate, "HH:mm"),
               endTime: format(endDate, "HH:mm"),
               notes: data.notes || "",
@@ -183,6 +184,31 @@ function NewAvailabilityForm() {
   );
 }
 
+// Simple wrapper that reads query params from URL manually
+function QueryParamWrapper() {
+  const [duplicateId, setDuplicateId] = useState<string | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    const dupId = params.get("duplicate");
+    if (dupId) {
+      setDuplicateId(dupId);
+    }
+  }, []);
+
+  if (!mounted) {
+    return (
+      <CardContent className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
+      </CardContent>
+    );
+  }
+
+  return <NewAvailabilityForm duplicateId={duplicateId} />;
+}
+
 export default function NewAvailabilityPage() {
   return (
     <div className="min-h-screen bg-slate-50">
@@ -200,13 +226,7 @@ export default function NewAvailabilityPage() {
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
         <Card>
-          <Suspense fallback={
-            <CardContent className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
-            </CardContent>
-          }>
-            <NewAvailabilityForm />
-          </Suspense>
+          <QueryParamWrapper />
         </Card>
       </main>
     </div>
