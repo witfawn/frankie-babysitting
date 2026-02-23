@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("PARENT") // ADMIN, PARENT
+  bio           String?
+  hourlyRate    Float?
+  phone         String?
+  address       String?
+  kidsAges      String?
+  emergencyName String?
+  emergencyPhone String?
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  bookings      Booking[]
+  referralsMade Referral[] @relation("Referrer")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Availability - Frankie's posted availability
+model Availability {
+  id          String   @id @default(cuid())
+  date        DateTime // The calendar date
+  startTime   DateTime // Available from
+  endTime     DateTime // Available until
+  notes       String?
+  status      String   @default("OPEN") // OPEN, FULLY_BOOKED
+  createdAt   DateTime @default(now())
+  bookings    Booking[]
+}
+
+// Booking - Parent's request within availability
+model Booking {
+  id              String   @id @default(cuid())
+  availabilityId  String
+  availability    Availability @relation(fields: [availabilityId], references: [id])
+  parentId        String
+  parent          User     @relation(fields: [parentId], references: [id])
+  requestedStart  DateTime // Parent's requested start
+  requestedEnd    DateTime // Parent's requested end
+  numKids         Int
+  kidsAges        String
+  address         String
+  emergencyName   String
+  emergencyPhone  String
+  notes           String?
+  status          String   @default("PENDING") // PENDING, CONFIRMED, DECLINED, COMPLETED
+  totalAmount     Float?
+  paymentStatus   String   @default("PENDING") // PENDING, PAID
+  createdAt       DateTime @default(now())
+}
+
+// Referral - Track who invited whom
+model Referral {
+  id            String   @id @default(cuid())
+  referrerId    String   // Who sent the invite
+  referrer      User     @relation("Referrer", fields: [referrerId], references: [id])
+  referredEmail String
+  status        String   @default("PENDING") // PENDING, ACCEPTED
+  createdAt     DateTime @default(now())
+  
+  @@unique([referrerId, referredEmail])
+}

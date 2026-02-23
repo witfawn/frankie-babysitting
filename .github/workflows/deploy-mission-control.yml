@@ -1,0 +1,82 @@
+name: Deploy Mission Control
+
+# Prerequisites:
+# - The production host has this repo cloned in APP_DIR (set below) with `main` checked out.
+# - The SSH user has access to APP_DIR and passwordless sudo to restart the service.
+# - Service restart command in `RESTART_CMD` matches your setup (systemd, docker, pm2, etc.).
+# - Health endpoint responds 200 OK at HEALTH_URL after a successful deploy.
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      APP_DIR: /opt/mission-control # TODO: update to the absolute path on the prod host
+      HEALTH_URL: http://localhost:18792/health # TODO: update if your health endpoint differs
+      RESTART_CMD: sudo systemctl restart mission-control # TODO: update to your service manager
+      PROD_USER: ubuntu # TODO: set the SSH username for your host
+    steps:
+      - name: Checkout (for metadata)
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ env.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "Deploying Mission Control on $(hostname)"
+            cd "${APP_DIR}"
+
+            PREV_REV=$(git rev-parse HEAD)
+            echo "Previous revision: ${PREV_REV}"
+
+            git fetch --all --prune
+            git checkout main
+            git pull --ff-only
+
+            echo "Restarting service"
+            ${RESTART_CMD}
+
+            echo "Waiting for health check: ${HEALTH_URL}"
+            OK=0
+            for i in {1..10}; do
+              if curl -fsS "${HEALTH_URL}" >/dev/null; then
+                OK=1
+                break
+              fi
+              sleep 3
+            done
+
+            if [ "${OK}" -ne 1 ]; then
+              echo "Health check failed; rolling back to ${PREV_REV}"
+              git reset --hard "${PREV_REV}"
+              ${RESTART_CMD}
+              exit 1
+            fi
+
+            echo "Deployment succeeded"
+
+      - name: Telegram notify success
+        if: ${{ success() }}
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="✅ Mission Control deployed successfully on ${{ secrets.PROD_HOST }} (commit ${{ github.sha }})" \
+            -d parse_mode=HTML
+        shell: bash
+
+      - name: Telegram notify failure
+        if: ${{ failure() }}
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="❌ Mission Control deploy FAILED on ${{ secrets.PROD_HOST }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -d parse_mode=HTML
+        shell: bash
