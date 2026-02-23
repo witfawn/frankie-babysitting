@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { utcToZonedTime } from "date-fns-tz";
 
 // Central timezone for all displays
 const TIMEZONE = "America/Chicago";
@@ -9,7 +9,7 @@ const TIMEZONE = "America/Chicago";
  */
 export function formatInCentral(date: Date | string, formatStr: string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  const zonedDate = toZonedTime(d, TIMEZONE);
+  const zonedDate = utcToZonedTime(d, TIMEZONE);
   return format(zonedDate, formatStr);
 }
 
