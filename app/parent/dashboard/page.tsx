@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Baby } from "lucide-react";
 import Link from "next/link";
-import { format, isAfter, startOfDay } from "date-fns";
+import { isAfter, startOfDay } from "date-fns";
+import { formatDate, formatTime } from "@/lib/timezone";
 import { ParentNav } from "@/components/parent-nav";
 
 async function getAvailability() {
@@ -70,11 +71,10 @@ export default async function ParentDashboardPage() {
                   >
                     <div>
                       <p className="font-medium">
-                        {format(new Date(booking.availability.date), "EEEE, MMMM d, yyyy")}
+                        {formatDate(booking.availability.date)}
                       </p>
                       <p className="text-sm text-slate-500">
-                        {format(new Date(booking.requestedStart), "h:mm a")} -{" "}
-                        {format(new Date(booking.requestedEnd), "h:mm a")}
+                        {formatTime(booking.requestedStart)} - {formatTime(booking.requestedEnd)}
                       </p>
                     </div>
                     <Badge
@@ -116,11 +116,10 @@ export default async function ParentDashboardPage() {
                 >
                   <div>
                     <p className="font-medium">
-                      {format(new Date(avail.date), "EEEE, MMMM d, yyyy")}
+                      {formatDate(avail.date)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {format(new Date(avail.startTime), "h:mm a")} -{" "}
-                      {format(new Date(avail.endTime), "h:mm a")}
+                      {formatTime(avail.startTime)} - {formatTime(avail.endTime)}
                     </p>
                     {avail.notes && (
                       <p className="text-sm text-slate-400 mt-1">{avail.notes}</p>
