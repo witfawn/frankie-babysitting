@@ -11,11 +11,13 @@ import { Baby } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
+  const session = sessionData?.data;
+  const status = sessionData?.status;
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (status === "loading") {
+  if (status === "loading" || !sessionData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />

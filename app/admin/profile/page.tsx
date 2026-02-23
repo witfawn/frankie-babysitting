@@ -11,7 +11,9 @@ import { AdminNav } from "@/components/admin-nav";
 import { toast } from "sonner";
 
 export default function AdminProfilePage() {
-  const { data: session, update } = useSession();
+  const sessionData = useSession();
+  const session = sessionData?.data;
+  const update = sessionData?.update;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
