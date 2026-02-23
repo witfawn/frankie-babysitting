@@ -19,21 +19,36 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email) return null;
         
-        const user = await prisma.user.findUnique({
+        const demoEmails = ["frankie@example.com", "mom@example.com", "parent@example.com"];
+        
+        if (!demoEmails.includes(credentials.email)) {
+          return null;
+        }
+        
+        // Find or create demo user
+        let user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
         
-        if (user) {
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            role: user.role,
-          };
+        if (!user) {
+          // Auto-create demo user
+          const role = credentials.email === "parent@example.com" ? "PARENT" : "ADMIN";
+          user = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.email.split("@")[0],
+              role: role,
+            },
+          });
         }
         
-        return null;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          role: user.role,
+        };
       },
     }),
   ],
